@@ -25,14 +25,16 @@ func snippetView(w http.ResponseWriter, r *http.Request) {
 func snippetCreate(w http.ResponseWriter, r *http.Request) {
 	// Use r.Method to check whether the request is using POST or not.
 	if r.Method != "POST" {
-		// If it's not, use the w.WriteHeader() method to send a 405 status // code and the w.Write() method to write a "Method Not Allowed"
-		// response body. We then return from the function so that the
-		// subsequent code is not executed.
-		w.WriteHeader(406)
-		w.Write([]byte("This Method Not Allowed")) // 和 WriteHeader 的訊息是獨立的
+		w.Header().Set("Allow", "POST")
+		// Use the http.Error() function to send a 405 status code and string as the response body.
+		// 最大的區別是我們現在將 http.ResponseWriter 傳遞給另一個函數，該函數會為我們向使用者發送回應。
+		// 使用 net/http 套件中的常數來表示 HTTP 方法和狀態代碼，而不是自己編寫字串和整數。
+		// http.Error(w, "This Method Not Allowed", 405)
+		http.Error(w, "This Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	w.Write([]byte("This Method Is Allowed"))
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"name":"Ian"}`))
 
 }
 func main() {
