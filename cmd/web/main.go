@@ -19,7 +19,11 @@ func main() {
 	// "/static" prefix before the request reaches the file server.
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
-	mux.HandleFunc("/", home)
+	// 但這個home功能只是普通功能； 它沒有 ServeHTTP() 方法。 所以它本身並不是一個處理程序。
+	// 相反，我們可以使用 http.HandlerFunc() handler 將其轉換為處理程序
+	// http.HandlerFunc() 適配器的工作原理是自動將 ServeHTTP() 方法新增至 home 函數。
+	mux.Handle("/", http.HandlerFunc(home))
+
 	mux.HandleFunc("/snippet/view", snippetView)
 	mux.HandleFunc("/snippet/create", snippetCreate)
 	log.Println("Starting server on :4000")
@@ -31,3 +35,10 @@ func main() {
 	err := http.ListenAndServe(":4000", mux)
 	log.Fatal(err)
 }
+
+// 當我們的伺服器收到一個新的 HTTP 請求時，它會呼叫 servemux 的 ServeHTTP() 方法。
+// 這會根據請求 URL 路徑尋找相關處理程序，然後呼叫該處理程序的 ServeHTTP() 方法。
+// 您可以將 Go Web 應用程式視為一系列依序呼叫的 ServeHTTP() 方法。
+
+// 所有傳入的 HTTP 請求都在它們自己的 goroutine 中提供服務。
+// 對於繁忙的伺服器，這意味著處理程序中的程式碼或由處理程序呼叫的程式碼很可能會同時執行
