@@ -2,19 +2,35 @@ package main
 
 import (
 	"fmt"
+	"html/template"
+	"log"
 	"net/http"
 	"strconv"
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
-	// Check if the current request URL path exactly matches "/". If it doesn't, use // the http.NotFound() function to send a 404 response to the client.
-	// Importantly, we then return from the handler.
-	// If we don't return the handler // would keep executing and also write the "NotFound" message.
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 		return
 	}
-	w.Write([]byte("NotFound"))
+	// Use the template.ParseFiles() function to read the template file into a
+	// template set.
+	// 傳遞給 template.ParseFiles() 函數的檔案路徑必須是相對於目前工作目錄的路徑，或是絕對路徑
+	ts, err := template.ParseFiles("./ui/html/pages/home.tmpl")
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, "Internal Server Error", 500)
+		return
+	}
+	// We then use the Execute() method on the template set to write the
+	// template content as the response body. The last parameter to Execute()
+	// represents any dynamic data that we want to pass in, which for now we'll
+	// leave as nil.
+	err = ts.Execute(w, nil)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, "Internal Server Error", 500)
+	}
 }
 
 func snippetView(w http.ResponseWriter, r *http.Request) {
