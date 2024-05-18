@@ -11,7 +11,7 @@ import (
 // *application.
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
-		http.NotFound(w, r)
+		app.notFound(w) // Use the notFound() helper
 		return
 	}
 	// Initialize a slice containing the paths to the two files. It's important
@@ -25,14 +25,14 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// Because the home handler function is now a method against application
 		// it can access its fields, including the error logger. We'll write the log // message to this instead of the standard logger.
-		app.errorLog.Println(err.Error())
+		app.serverError(w, err) // Use the serverError() helper.
 		http.Error(w, "Internal Server Error", 500)
 		return
 	}
 	// 使用 ExecuteTemplate 方法將名為 base 的模板輸出到 HTTP response body.
 	err = ts.ExecuteTemplate(w, "base", nil)
 	if err != nil {
-		app.errorLog.Println(err.Error())
+		app.serverError(w, err) // Use the serverError() helper.
 		http.Error(w, "Internal Server Error", 500)
 	}
 }
@@ -45,7 +45,7 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	// strconv.Atoi 確保了程序能正確處理非預期的輸入，並在出現錯誤時提供適當的回應。
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 1 {
-		http.NotFound(w, r)
+		app.notFound(w) // Use the notFound() helper.
 		return
 	}
 	// Use the fmt.Fprintf() function to interpolate the id value with our response
@@ -61,7 +61,7 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 		// 最大的區別是我們現在將 http.ResponseWriter 傳遞給另一個函數，該函數會為我們向使用者發送回應。
 		// 使用 net/http 套件中的常數來表示 HTTP 方法和狀態代碼，而不是自己編寫字串和整數。
 		// http.Error(w, "This Method Not Allowed", 405)
-		http.Error(w, "This Method Not Allowed", http.StatusMethodNotAllowed)
+		app.clientError(w, http.StatusMethodNotAllowed) // Use the clientError() helper.
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
