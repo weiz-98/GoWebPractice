@@ -7,6 +7,13 @@ import (
 	"os"
 )
 
+// Define an application struct to hold the application-wide dependencies for the
+// web application. For now we'll only include fields for the two custom loggers, but // we'll add more to it as the build progresses.
+type application struct {
+	errorLog *log.Logger
+	infoLog  *log.Logger
+}
+
 func main() {
 	// Define a new command-line flag with the name 'addr', a default value of ":4000"
 	// and some short help text explaining what the flag controls. The value of the
@@ -30,6 +37,12 @@ func main() {
 	// file name and line number.
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
+	// Initialize a new instance of our application struct, containing the
+	// dependencies.
+	app := &application{
+		errorLog: errorLog,
+		infoLog:  infoLog}
+
 	// Use the http.NewServeMux() function to initialize a new servemux, then
 	// register the home function as the handler for the "/" URL pattern.
 	mux := http.NewServeMux()
@@ -46,10 +59,10 @@ func main() {
 	// 但這個home功能只是普通功能； 它沒有 ServeHTTP() 方法。 所以它本身並不是一個處理程序。
 	// 相反，我們可以使用 http.HandlerFunc() handler 將其轉換為處理程序
 	// http.HandlerFunc() 適配器的工作原理是自動將 ServeHTTP() 方法新增至 home 函數。
-	mux.Handle("/", http.HandlerFunc(home))
+	mux.Handle("/", http.HandlerFunc(app.home))
 
-	mux.HandleFunc("/snippet/view", snippetView)
-	mux.HandleFunc("/snippet/create", snippetCreate)
+	mux.HandleFunc("/snippet/view", app.snippetView) // Swap the route declarations to use the application struct's methods as the handler functions.
+	mux.HandleFunc("/snippet/create", app.snippetCreate)
 	infoLog.Printf("Starting server on %s", *addr) // Information message
 	// Use the http.ListenAndServe() function to start a new web server. We pass in
 	// two parameters: the TCP network address to listen on (in this case ":4000")
