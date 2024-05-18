@@ -13,20 +13,21 @@ func home(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	// Use the template.ParseFiles() function to read the template file into a
-	// template set.
-	// 傳遞給 template.ParseFiles() 函數的檔案路徑必須是相對於目前工作目錄的路徑，或是絕對路徑
-	ts, err := template.ParseFiles("./ui/html/pages/home.tmpl")
+	// Initialize a slice containing the paths to the two files. It's important
+	// to note that the file containing our base template must be the *first* // file in the slice.
+	files := []string{
+		"./ui/html/base.tmpl",
+		"./ui/html/partials/nav.tmpl",
+		"./ui/html/pages/home.tmpl"}
+	// 使用 template 包的 ParseFiles 函數來讀取和解析上述提到的模板文件
+	ts, err := template.ParseFiles(files...)
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, "Internal Server Error", 500)
 		return
 	}
-	// We then use the Execute() method on the template set to write the
-	// template content as the response body. The last parameter to Execute()
-	// represents any dynamic data that we want to pass in, which for now we'll
-	// leave as nil.
-	err = ts.Execute(w, nil)
+	// 使用 ExecuteTemplate 方法將名為 base 的模板輸出到 HTTP response body.
+	err = ts.ExecuteTemplate(w, "base", nil)
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, "Internal Server Error", 500)
