@@ -59,11 +59,15 @@ func main() {
 		snippets:      &models.SnippetModel{DB: db},
 		templateCache: templateCache,
 	}
-	srv := &http.Server{
+	stack := app.createStack( //透過建立 createStack 把所有 middleware 串接起來
+		app.logRequest,
+		app.secureHeaders,
+	)
+	srv := &http.Server{ // 使用指針型態才可以在整個專案共享服務器配置
 		Addr:     *addr,
 		ErrorLog: errorLog,
 		// Call the new app.routes() method to get the servemux containing our routes.
-		Handler: app.routes(),
+		Handler: stack(app.routes()), // 1.22 版本之後可以直接 wrap 在 router 之外
 	}
 
 	infoLog.Printf("Starting server on %s", *addr)
