@@ -21,29 +21,22 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	for _, snippet := range snippets {
-		fmt.Fprintf(w, "%+v\n", snippet)
-	}
-	// Initialize a slice containing the paths to the two files. It's important
-	// to note that the file containing our base template must be the *first* // file in the slice.
-	files := []string{
-		"./ui/html/base.tmpl",
+	files := []string{"./ui/html/base.tmpl",
 		"./ui/html/partials/nav.tmpl",
 		"./ui/html/pages/home.tmpl"}
-	// 使用 template 包的 ParseFiles 函數來讀取和解析上述提到的模板文件
+
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		// Because the home handler function is now a method against application
-		// it can access its fields, including the error logger. We'll write the log // message to this instead of the standard logger.
-		app.serverError(w, err) // Use the serverError() helper.
-		http.Error(w, "Internal Server Error", 500)
+		app.serverError(w, err)
 		return
 	}
-	// 使用 ExecuteTemplate 方法將名為 base 的模板輸出到 HTTP response body.
-	err = ts.ExecuteTemplate(w, "base", nil)
+	// Create an instance of a templateData struct holding the slice of // snippets.
+	data := &templateData{
+		Snippets: snippets}
+	// Pass in the templateData struct when executing the template.
+	err = ts.ExecuteTemplate(w, "base", data)
 	if err != nil {
-		app.serverError(w, err) // Use the serverError() helper.
-		http.Error(w, "Internal Server Error", 500)
+		app.serverError(w, err)
 	}
 }
 
@@ -53,9 +46,6 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		app.notFound(w)
 		return
 	}
-	// Use the SnippetModel object's Get method to retrieve the data for a
-	// specific record based on its ID. If no matching record is found,
-	// return a 404 Not Found response.
 	snippet, err := app.snippets.Get(id)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
@@ -65,8 +55,27 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	// Write the snippet data as a plain-text HTTP response body.
-	fmt.Fprintf(w, "%+v", snippet)
+	// Initialize a slice containing the paths to the view.tmpl file,
+	// plus the base layout and navigation partial that we made earlier.
+	files := []string{
+		"./ui/html/base.tmpl",
+		"./ui/html/partials/nav.tmpl",
+		"./ui/html/pages/view.tmpl",
+	}
+	// 使用 template 包的 ParseFiles 函數來讀取和解析上述提到的模板文件
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	// Create an instance of a templateData struct holding the snippet data.
+	data := &templateData{Snippet: snippet}
+	// Pass in the templateData struct when executing the template.
+	err = ts.ExecuteTemplate(w, "base", data)
+	if err != nil {
+		app.serverError(w, err)
+	}
+
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
