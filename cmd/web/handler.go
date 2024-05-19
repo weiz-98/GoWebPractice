@@ -1,6 +1,8 @@
 package main
 
 import (
+	"GoWebPractice/internal/models"
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -38,19 +40,25 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
-	// Extract the value of the id parameter from the query string and try to
-	// convert it to an integer using the strconv.Atoi() function. If it can't
-	// be converted to an integer, or the value is less than 1, we return a 404 page
-	// not found response.
-	// strconv.Atoi 確保了程序能正確處理非預期的輸入，並在出現錯誤時提供適當的回應。
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 1 {
-		app.notFound(w) // Use the notFound() helper.
+		app.notFound(w)
 		return
 	}
-	// Use the fmt.Fprintf() function to interpolate the id value with our response
-	// and write it to the http.ResponseWriter.
-	fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
+	// Use the SnippetModel object's Get method to retrieve the data for a
+	// specific record based on its ID. If no matching record is found,
+	// return a 404 Not Found response.
+	snippet, err := app.snippets.Get(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+	// Write the snippet data as a plain-text HTTP response body.
+	fmt.Fprintf(w, "%+v", snippet)
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
