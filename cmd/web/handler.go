@@ -4,16 +4,13 @@ import (
 	"GoWebPractice/internal/models"
 	"errors"
 	"fmt"
-	"html/template"
 	"net/http"
 	"strconv"
 )
 
-// Change the signature of the home handler so it is defined as a method against
-// *application.
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
-		app.notFound(w) // Use the notFound() helper
+		app.notFound(w)
 		return
 	}
 	snippets, err := app.snippets.Latest()
@@ -21,25 +18,12 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	files := []string{"./ui/html/base.tmpl",
-		"./ui/html/partials/nav.tmpl",
-		"./ui/html/pages/home.tmpl"}
-
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	// Create an instance of a templateData struct holding the slice of // snippets.
-	data := &templateData{
-		Snippets: snippets}
-	// Pass in the templateData struct when executing the template.
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serverError(w, err)
-	}
+	// Call the newTemplateData() helper to get a templateData struct containing // the 'default' data (which for now is just the current year), and add the // snippets slice to it.
+	data := app.newTemplateData(r)
+	data.Snippets = snippets
+	// Pass the data to the render() helper as normal.
+	app.render(w, http.StatusOK, "home.tmpl", data)
 }
-
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 1 {
@@ -55,28 +39,10 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	// Initialize a slice containing the paths to the view.tmpl file,
-	// plus the base layout and navigation partial that we made earlier.
-	files := []string{
-		"./ui/html/base.tmpl",
-		"./ui/html/partials/nav.tmpl",
-		"./ui/html/pages/view.tmpl",
-	}
-	// 使用 template 包的 ParseFiles 函數來讀取和解析上述提到的模板文件
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	// Create an instance of a templateData struct holding the snippet data.
-	data := &templateData{Snippet: snippet}
-	// Pass in the templateData struct when executing the template.
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serverError(w, err)
-	}
-	// Use the new render helper.
-	app.render(w, http.StatusOK, "view.tmpl", &templateData{Snippet: snippet})
+	// And do the same thing again here...
+	data := app.newTemplateData(r)
+	data.Snippet = snippet
+	app.render(w, http.StatusOK, "view.tmpl", data)
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
