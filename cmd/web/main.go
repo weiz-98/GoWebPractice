@@ -62,6 +62,7 @@ func main() {
 	stack := app.createStack( //透過建立 createStack 把所有 middleware 串接起來
 		app.logRequest,
 		app.secureHeaders,
+		app.recoverPanic,
 	)
 	srv := &http.Server{ // 使用指針型態才可以在整個專案共享服務器配置
 		Addr:     *addr,
