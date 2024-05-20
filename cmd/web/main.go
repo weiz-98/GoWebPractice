@@ -12,6 +12,7 @@ import (
 	//you can find it at the top of the go.mod file.
 	"GoWebPractice/internal/models"
 
+	"github.com/alexedwards/scs/mysqlstore"
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form"
 	_ "github.com/go-sql-driver/mysql" // 表示這個包會被導入，但不會在程式碼中直接使用這個包中的任何函數或類型。這種導入方式通常用於其副作用（side effects）。
@@ -63,6 +64,7 @@ func main() {
 	// lifetime of 12 hours (so that sessions automatically expire 12 hours
 	// after first being created).
 	sessionManager := scs.New()
+	sessionManager.Store = mysqlstore.New(db)
 	sessionManager.Lifetime = 12 * time.Hour
 
 	// And add the session manager to our application dependencies.
