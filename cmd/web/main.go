@@ -11,6 +11,7 @@ import (
 	//you can find it at the top of the go.mod file.
 	"GoWebPractice/internal/models"
 
+	"github.com/go-playground/form"
 	_ "github.com/go-sql-driver/mysql" // 表示這個包會被導入，但不會在程式碼中直接使用這個包中的任何函數或類型。這種導入方式通常用於其副作用（side effects）。
 )
 
@@ -22,6 +23,7 @@ type application struct {
 	infoLog       *log.Logger
 	snippets      *models.SnippetModel
 	templateCache map[string]*template.Template
+	formDecoder   *form.Decoder
 }
 
 func main() {
@@ -50,7 +52,8 @@ func main() {
 	if err != nil {
 		errorLog.Fatal(err)
 	}
-
+	// Initialize a decoder instance...
+	formDecoder := form.NewDecoder()
 	// Initialize a models.SnippetModel instance and add it to the application
 	// dependencies.
 	app := &application{
@@ -58,6 +61,7 @@ func main() {
 		infoLog:       infoLog,
 		snippets:      &models.SnippetModel{DB: db},
 		templateCache: templateCache,
+		formDecoder:   formDecoder,
 	}
 	stack := app.createStack( //透過建立 createStack 把所有 middleware 串接起來
 		app.logRequest,
