@@ -7,10 +7,12 @@ import (
 	"log"
 	"net/http"
 	"os" // New import
+	"time"
 
 	//you can find it at the top of the go.mod file.
 	"GoWebPractice/internal/models"
 
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form"
 	_ "github.com/go-sql-driver/mysql" // 表示這個包會被導入，但不會在程式碼中直接使用這個包中的任何函數或類型。這種導入方式通常用於其副作用（side effects）。
 )
@@ -19,11 +21,12 @@ import (
 // make the SnippetModel object available to our handlers.
 // 使我們的模型成為一個單一的、整齊封裝的對象，我們可以輕鬆地初始化該對象，然後將其作為依賴項傳遞給我們的處理程序
 type application struct {
-	errorLog      *log.Logger
-	infoLog       *log.Logger
-	snippets      *models.SnippetModel
-	templateCache map[string]*template.Template
-	formDecoder   *form.Decoder
+	errorLog       *log.Logger
+	infoLog        *log.Logger
+	snippets       *models.SnippetModel
+	templateCache  map[string]*template.Template
+	formDecoder    *form.Decoder
+	sessionManager *scs.SessionManager
 }
 
 func main() {
@@ -54,19 +57,28 @@ func main() {
 	}
 	// Initialize a decoder instance...
 	formDecoder := form.NewDecoder()
-	// Initialize a models.SnippetModel instance and add it to the application
-	// dependencies.
+
+	// Use the scs.New() function to initialize a new session manager. Then we
+	// configure it to use our MySQL database as the session store, and set a
+	// lifetime of 12 hours (so that sessions automatically expire 12 hours
+	// after first being created).
+	sessionManager := scs.New()
+	sessionManager.Lifetime = 12 * time.Hour
+
+	// And add the session manager to our application dependencies.
 	app := &application{
-		errorLog:      errorLog,
-		infoLog:       infoLog,
-		snippets:      &models.SnippetModel{DB: db},
-		templateCache: templateCache,
-		formDecoder:   formDecoder,
+		errorLog:       errorLog,
+		infoLog:        infoLog,
+		snippets:       &models.SnippetModel{DB: db},
+		templateCache:  templateCache,
+		formDecoder:    formDecoder,
+		sessionManager: sessionManager,
 	}
 	stack := app.createStack( //透過建立 createStack 把所有 middleware 串接起來
 		app.logRequest,
 		app.secureHeaders,
 		app.recoverPanic,
+		app.sessionManager.LoadAndSave,
 	)
 	srv := &http.Server{ // 使用指針型態才可以在整個專案共享服務器配置
 		Addr:     *addr,
