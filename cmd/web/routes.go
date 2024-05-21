@@ -10,6 +10,12 @@ func (app *application) routes() *http.ServeMux {
 	mux.HandleFunc("GET /snippet/view/{id}", app.snippetView)
 	mux.HandleFunc("GET /snippet/create", app.snippetCreate)
 	mux.HandleFunc("POST /snippet/create", app.snippetCreatePost)
+
+	mux.HandleFunc("GET /user/signup", app.userSignup)
+	mux.HandleFunc("POST /user/signup", app.userSignupPost)
+	mux.HandleFunc("GET /user/login", app.userLogin)
+	mux.HandleFunc("POST /user/login", app.userLoginPost)
+	mux.HandleFunc("POST /user/logout", app.userLogoutPost)
 	return mux
 }
 
