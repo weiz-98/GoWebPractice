@@ -67,7 +67,12 @@ func main() {
 	sessionManager.Store = mysqlstore.New(db)
 	sessionManager.Lifetime = 12 * time.Hour
 
-	// And add the session manager to our application dependencies.
+	// Make sure that the Secure attribute is set on our session cookies.
+	// Setting this means that the cookie will only be sent by a user's web
+	// browser when a HTTPS connection is being used (and won't be sent over an
+	// unsecure HTTP connection).
+	sessionManager.Cookie.Secure = true
+
 	app := &application{
 		errorLog:       errorLog,
 		infoLog:        infoLog,
@@ -90,10 +95,10 @@ func main() {
 	}
 
 	infoLog.Printf("Starting server on %s", *addr)
-	// Because the err variable is now already declared in the code above, we need
-	// to use the assignment operator = here, instead of the := 'declare and assign'
-	// operator.
-	err = srv.ListenAndServe()
+	// Use the ListenAndServeTLS() method to start the HTTPS server. We
+	// pass in the paths to the TLS certificate and corresponding private key as
+	// the two parameters.
+	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 	errorLog.Fatal(err)
 }
 
