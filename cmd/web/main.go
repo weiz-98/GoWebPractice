@@ -84,13 +84,6 @@ func main() {
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,
 	}
-	stack := app.createStack( //透過建立 createStack 把所有 middleware 串接起來
-		app.logRequest,
-		app.secureHeaders,
-		app.recoverPanic,
-		app.sessionManager.LoadAndSave,
-		app.requireAuthentication,
-	)
 	// Initialize a tls.Config struct to hold the non-default TLS settings we
 	// want the server to use. In this case the only thing that we're changing
 	// is the curve preferences value, so that only elliptic curves with
@@ -104,7 +97,7 @@ func main() {
 		Addr:     *addr,
 		ErrorLog: errorLog,
 		// Call the new app.routes() method to get the servemux containing our routes.
-		Handler:   stack(app.routes()), // 1.22 版本之後可以直接 wrap 在 router 之外
+		Handler:   app.routes(), // 1.22 版本之後可以直接 wrap 在 router 之外
 		TLSConfig: tlsConfig,
 		// Add Idle, Read and Write timeouts to the server.
 		IdleTimeout:    time.Minute,
