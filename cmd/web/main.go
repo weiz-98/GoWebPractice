@@ -89,6 +89,7 @@ func main() {
 		app.secureHeaders,
 		app.recoverPanic,
 		app.sessionManager.LoadAndSave,
+		app.requireAuthentication,
 	)
 	// Initialize a tls.Config struct to hold the non-default TLS settings we
 	// want the server to use. In this case the only thing that we're changing
