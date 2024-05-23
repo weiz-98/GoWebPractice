@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -92,3 +93,42 @@ func noSurf(next http.Handler) http.Handler {
 	})
 	return csrfHandler
 }
+
+// isAuthenticated() 幫助器可能在每個請求週期中被多次呼叫。 目前我們使用它兩次——
+// 一次在 requireAuthentication() 中間件中，另一次在 newTemplateData() 幫助器中。
+// 因此，如果我們直接從 isAuthenticated() 幫助程式查詢資料庫，我們最終會在每個請求期間對資料庫進行重複的往返
+// 解決方式是做成 middleware 減少 資料庫 query 次數
+func (app *application) authenticate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Retrieve the authenticatedUserID value from the session using the
+		// GetInt() method. This will return the zero value for an int (0) if no
+		// "authenticatedUserID" value is in the session -- in which case we
+		// call the next handler in the chain as normal and return.
+		id := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+		if id == 0 {
+			next.ServeHTTP(w, r)
+			return
+		}
+		// Otherwise, we check to see if a user with that ID exists in our
+		// database.
+		exists, err := app.users.Exists(id)
+		if err != nil {
+			app.serverError(w, err)
+			return
+		}
+		// If a matching user is found, we know we know that the request is
+		// coming from an authenticated user who exists in our database. We
+		// create a new copy of the request (with an isAuthenticatedContextKey
+		// value of true in the request context) and assign it to r.
+		if exists {
+			ctx := context.WithValue(r.Context(), isAuthenticatedContextKey, true)
+			r = r.WithContext(ctx)
+		}
+		// Call the next handler in the chain.
+		next.ServeHTTP(w, r)
+	})
+}
+
+//authMiddleware：通過 r.WithContext(ctx) 創建了一個新的請求對象，該對象包含了更新的上下文，
+// 而不是直接修改原始請求。這樣做可以保證原始請求對象的不可變性。
+//handler：可以安全地從上下文中讀取數據，而不用擔心其他中間件或處理器對原始請求的修改。
