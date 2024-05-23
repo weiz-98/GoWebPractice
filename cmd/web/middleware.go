@@ -23,7 +23,8 @@ type warpWriter struct {
 	statusCode int
 }
 
-func (w *warpWriter) writeHeader(statusCode int) {
+// The method writeHeader is renamed to WriteHeader to correctly override the ResponseWriter interface's WriteHeader method.
+func (w *warpWriter) WriteHeader(statusCode int) {
 	w.ResponseWriter.WriteHeader(statusCode)
 	w.statusCode = statusCode
 }
@@ -35,8 +36,8 @@ func (app *application) logRequest(next http.Handler) http.Handler {
 			ResponseWriter: w,
 			statusCode:     http.StatusOK,
 		}
-		app.infoLog.Printf("%d %s %s %s", wrapped.statusCode, r.Method, r.URL.RequestURI(), time.Since(start))
 		next.ServeHTTP(wrapped, r)
+		app.infoLog.Printf("%d %s %s %s", wrapped.statusCode, r.Method, r.URL.RequestURI(), time.Since(start))
 	})
 }
 
