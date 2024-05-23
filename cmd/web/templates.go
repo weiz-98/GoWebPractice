@@ -21,11 +21,13 @@ var functions = template.FuncMap{
 
 // Include a Snippets field in the templateData struct.
 type templateData struct {
-	CurrentYear int
-	Snippet     *models.Snippet
-	Snippets    []*models.Snippet
-	Form        any
-	Flash       string
+	CurrentYear     int
+	Snippet         *models.Snippet
+	Snippets        []*models.Snippet
+	Form            any
+	Flash           string
+	IsAuthenticated bool
+	CSRFToken       string // Add a CSRFToken field.
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {
