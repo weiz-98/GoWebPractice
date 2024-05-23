@@ -4,6 +4,11 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/justinas/nosurf" // 使用雙重提交 cookie 模式來防止攻擊。
+	// 在此模式中，會產生隨機 CSRF 令牌並將其透過 CSRF cookie 傳送給使用者。
+	// 然後，將此 CSRF 令牌新增至每個容易受到 CSRF 攻擊的 HTML 表單中的隱藏欄位中。
+	// 當提交表單時，兩個套件都會使用一些中間件來檢查隱藏欄位值和 cookie 值是否符合
 )
 
 func secureHeaders(next http.Handler) http.Handler {
@@ -76,4 +81,14 @@ func (app *application) requireAuthentication(next http.Handler) http.Handler {
 		// And call the next handler in the chain.
 		next.ServeHTTP(w, r)
 	})
+}
+
+// Create a NoSurf middleware function which uses a customized CSRF cookie with
+// the Secure, Path and HttpOnly attributes set.
+func noSurf(next http.Handler) http.Handler {
+	csrfHandler := nosurf.New(next)
+	csrfHandler.SetBaseCookie(http.Cookie{
+		HttpOnly: true, Path: "/", Secure: true,
+	})
+	return csrfHandler
 }

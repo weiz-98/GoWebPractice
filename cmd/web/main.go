@@ -68,6 +68,12 @@ func main() {
 	sessionManager := scs.New()
 	sessionManager.Store = mysqlstore.New(db)
 	sessionManager.Lifetime = 12 * time.Hour
+	// sessionManager.Cookie.SameSite = http.SameSiteStrictMode
+	// 將阻止使用者瀏覽器發送的所有跨網站使用的會話 cookie — 包括使用 GET 和 HEAD 等 HTTP 方法的安全性請求。
+	// 缺點是當使用者從另一個網站點擊指向您的應用程式的連結時，不會發送會話 cookie。
+	// 反過來，這意味著您的應用程式最初會將使用者視為“未登入”，即使他們有一個包含其“authenticatedUserID”值的活動會話。
+	// 如果您的應用程式可能有其他網站連結到它（甚至是電子郵件或私人訊息服務中共享的連結）
+	// 預設 的 SameSite=Lax 通常是更合適的設定。
 
 	// Make sure that the Secure attribute is set on our session cookies.
 	// Setting this means that the cookie will only be sent by a user's web
