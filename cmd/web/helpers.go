@@ -99,8 +99,11 @@ func (app *application) decodePostForm(r *http.Request, dst any) error {
 	return nil
 }
 
-// Return true if the current request is from an authenticated user, otherwise
-// return false.
+// 不用再去檢查 session manager，而是檢查 context
 func (app *application) isAuthenticated(r *http.Request) bool {
-	return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
+	isAuthenticated, ok := r.Context().Value(isAuthenticatedContextKey).(bool)
+	if !ok {
+		return false
+	}
+	return isAuthenticated
 }
