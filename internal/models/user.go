@@ -10,6 +10,15 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// 只要物件具有滿足介面所需的方法，我們就可以在應用程式結構中使用它們。
+// 我們的「真實」資料庫模型（如 models.SnippetModel）和模擬資料庫模型（如 mocks.SnippetModel）都滿足接口
+// 因此我們現在可以互換使用它們。
+type UserModelInterface interface {
+	Insert(name, email, password string) error
+	Authenticate(email, password string) (int, error)
+	Exists(id int) (bool, error)
+}
+
 // Define a new User type. Notice how the field names and types align
 // with the columns in the database "users" table?
 type User struct {

@@ -52,7 +52,8 @@ func (app *application) render(w http.ResponseWriter, status int, page string, d
 		return
 	}
 	// If the template is written to the buffer without any errors, we are safe
-	// to go ahead and write the HTTP status code to http.ResponseWriter. w.WriteHeader(status)
+	// to go ahead and write the HTTP status code to http.ResponseWriter.
+	w.WriteHeader(status)
 	// Write the contents of the buffer to the http.ResponseWriter. Note: this
 	// is another time where we pass our http.ResponseWriter to a function that
 	// takes an io.Writer.
