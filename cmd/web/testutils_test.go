@@ -2,11 +2,13 @@ package main
 
 import (
 	"bytes"
+	"html"
 	"io"
 	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
+	"regexp"
 	"testing"
 	"time"
 
@@ -88,4 +90,23 @@ func (ts *testServer) get(t *testing.T, urlPath string) (int, http.Header, strin
 	}
 	bytes.TrimSpace(body)
 	return rs.StatusCode, rs.Header, string(body)
+}
+
+// Define a regular expression which captures the CSRF token value from the
+// HTML for our user signup page.
+var csrfTokenRX = regexp.MustCompile(`<input type='hidden' name='csrf_token' value='(.+)'>`)
+
+func extractCSRFToken(t *testing.T, body string) string {
+	// Use the FindStringSubmatch method to extract the token from the HTML body.
+	// Note that this returns an array with the entire matched pattern in the
+	// first position, and the values of any captured data in the subsequent
+	// positions.
+	matches := csrfTokenRX.FindStringSubmatch(body)
+	if len(matches) < 2 {
+		t.Fatal("no csrf token found in body")
+	}
+	// Go 的 html/template 套件自動轉義所有動態渲染的資料…包括我們的 CSRF 令牌。
+	// 由於 CSRF 令牌是 base64 編碼的字串，因此它可能包含 + 字符，並且該字符將轉義為 &#43;。
+	// 因此，從 HTML 中提取令牌後，我們需要透過 html.UnescapeString() 運行它以獲取原始令牌值
+	return html.UnescapeString(string(matches[1]))
 }
