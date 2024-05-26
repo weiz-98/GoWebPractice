@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
+	"net/url"
 	"regexp"
 	"testing"
 	"time"
@@ -109,4 +110,23 @@ func extractCSRFToken(t *testing.T, body string) string {
 	// 由於 CSRF 令牌是 base64 編碼的字串，因此它可能包含 + 字符，並且該字符將轉義為 &#43;。
 	// 因此，從 HTML 中提取令牌後，我們需要透過 html.UnescapeString() 運行它以獲取原始令牌值
 	return html.UnescapeString(string(matches[1]))
+}
+
+// Create a postForm method for sending POST requests to the test server. The
+// final parameter to this method is a url.Values object which can contain any
+// form data that you want to send in the request body.
+func (ts *testServer) postForm(t *testing.T, urlPath string, form url.Values) (int, http.Header, string) {
+	rs, err := ts.Client().PostForm(ts.URL+urlPath, form)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Read the response body from the test server.
+	defer rs.Body.Close()
+	body, err := io.ReadAll(rs.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bytes.TrimSpace(body)
+	// Return the response status, headers and body.
+	return rs.StatusCode, rs.Header, string(body)
 }
