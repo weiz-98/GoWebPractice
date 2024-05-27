@@ -23,6 +23,7 @@ import (
 // make the SnippetModel object available to our handlers.
 // 使我們的模型成為一個單一的、整齊封裝的對象，我們可以輕鬆地初始化該對象，然後將其作為依賴項傳遞給我們的處理程序
 type application struct {
+	debug          bool
 	errorLog       *log.Logger
 	infoLog        *log.Logger
 	snippets       models.SnippetModelInterface
@@ -36,6 +37,8 @@ func main() {
 	addr := flag.String("addr", ":4000", "HTTP network address")
 	// Define a new command-line flag for the MySQL DSN string.
 	dsn := flag.String("dsn", "web:pass@/snippetbox?parseTime=true", "MySQL data source name")
+	// Create a new debug flag with the default value of false.
+	debug := flag.Bool("debug", false, "Enable debug mode")
 	flag.Parse()
 
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
@@ -82,6 +85,7 @@ func main() {
 	sessionManager.Cookie.Secure = true
 
 	app := &application{
+		debug:          *debug, // Add the debug flag value to the application struct.
 		errorLog:       errorLog,
 		infoLog:        infoLog,
 		snippets:       &models.SnippetModel{DB: db},
